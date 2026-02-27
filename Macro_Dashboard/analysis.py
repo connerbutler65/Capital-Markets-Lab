@@ -10,18 +10,15 @@ def compute_returns(df: pd.DataFrame) -> pd.DataFrame:
 
 def compute_rolling_vol(df: pd.DataFrame, window: int = 30) -> pd.DataFrame:
     returns = compute_returns(df)
-    return returns.rolling(window).std() * (252 ** 0.5)  # annualized
+    return returns.rolling(window).std() * (252 ** 0.5)
 
 def compute_correlation(df: pd.DataFrame) -> pd.DataFrame:
     return compute_returns(df).corr()
+
 if __name__ == "__main__":
     tickers = ["CL=F", "BZ=F", "NG=F", "^TNX", "DX-Y.NYB"]
     prices = get_prices(tickers)
+    print("--- Recent Prices ---")
     print(prices.tail())
-    print("\nCorrelation Matrix:")
+    print("\n--- Correlation Matrix ---")
     print(compute_correlation(prices))
-
-print("--- Recent Prices ---")
-print(prices.tail())
-print("\n--- Correlation Matrix ---")
-print(compute_correlation(prices))
