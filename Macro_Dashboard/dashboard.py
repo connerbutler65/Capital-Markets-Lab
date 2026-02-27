@@ -55,7 +55,8 @@ st.caption("Auto-generated signals based on current vs. 1-month-ago prices. "
            "Reflects real-time directional bias for each asset.")
 
 latest = prices.iloc[-1]
-prev = prices.iloc[-20]
+one_month_ago = prices.index[-1] - pd.DateOffset(months=1)
+prev = prices.loc[prices.index.asof(one_month_ago)]
 
 col1, col2, col3, col4, col5 = st.columns(5)
 cols = [col1, col2, col3, col4, col5]
@@ -71,6 +72,14 @@ st.subheader("Trade Ideas")
 st.caption("Forward-looking positions derived from current price trends, volatility regimes, "
            "and macro correlations shown above. Updated dynamically based on live data.")
 
+# Volatility warning
+wti_vol = vol["WTI Crude"].iloc[-1]
+nat_gas_vol = vol["Nat Gas"].iloc[-1]
+
+if wti_vol > 0.45 or nat_gas_vol > 0.80:
+    st.warning("⚠️ High volatility detected — trade signals may be less reliable. "
+               "Use additional confirmation before acting.")
+
 wti_trend = "bullish" if latest["WTI Crude"] > prev["WTI Crude"] else "bearish"
 brent_trend = "bullish" if latest["Brent Crude"] > prev["Brent Crude"] else "bearish"
 gas_trend = "bullish" if latest["Nat Gas"] > prev["Nat Gas"] else "bearish"
@@ -82,11 +91,24 @@ gas_direction = "📈 Long" if gas_trend == "bullish" else "📉 Short"
 usd_direction = "📉 Short" if usd_trend == "weakening" else "📈 Long"
 spread_direction = "📈 Long Spread" if brent_trend == "bullish" and wti_trend == "bearish" else "📉 Short Spread"
 
+# USD-aware WTI and Brent thesis
+wti_usd_context = (
+    "USD weakness supports crude upside — oil cheaper for foreign buyers."
+    if usd_trend == "weakening"
+    else "Note: USD strength is a headwind for crude — monitor for price resistance."
+)
+
+brent_usd_context = (
+    "USD weakness amplifies Brent upside for non-USD buyers."
+    if usd_trend == "weakening"
+    else "Note: USD strength may cap Brent gains despite geopolitical premium."
+)
+
 trade_ideas = pd.DataFrame([
     {
         "Asset": "WTI Crude (CL=F)",
         "Direction": wti_direction,
-        "Thesis": f"1M trend is {wti_trend}. {'USD weakness + supply draw supports upside. Watch $80 resistance.' if wti_trend == 'bullish' else 'Demand concerns weighing on price. Watch for support breakdown.'}",
+        "Thesis": f"1M trend is {wti_trend}. {wti_usd_context} {'Supply draw adds further support.' if wti_trend == 'bullish' else 'Watch for support breakdown.'}",
         "Risk": "Demand slowdown, China PMI miss"
     },
     {
@@ -102,12 +124,11 @@ trade_ideas = pd.DataFrame([
         "Risk": "Fed hawkish surprise, risk-off flight to USD"
     },
     {
-        "Asset": "Brent-WTI Spread",
-        "Direction": spread_direction,
-        "Thesis": f"Brent is {brent_trend}, WTI is {wti_trend}. {'Geopolitical premium building in Brent.' if spread_direction == '📈 Long Spread' else 'Spread compression as US exports rise.'}",
+        "Asset": "Brent Crude (BZ=F)",
+        "Direction": "📈 Long" if brent_trend == "bullish" else "📉 Short",
+        "Thesis": f"1M trend is {brent_trend}. {brent_usd_context} {'Geopolitical premium building.' if brent_trend == 'bullish' else 'Demand concerns pressuring price.'}",
         "Risk": "US export surge, OPEC policy shift"
     },
 ])
 
 st.dataframe(trade_ideas, use_container_width=True)
-
