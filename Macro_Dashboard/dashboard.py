@@ -6,6 +6,10 @@ from analysis import get_prices, compute_returns, compute_rolling_vol, compute_c
 st.set_page_config(page_title="Macro & Commodities Dashboard", layout="wide")
 st.title("🛢️ Global Macro & Commodities Dashboard")
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Built by Conner Butler**")
+st.sidebar.markdown("Capital Markets Lab | 2026")
+
 TICKERS = ["CL=F", "BZ=F", "NG=F", "^TNX", "DX-Y.NYB"]
 NAMES = {"CL=F": "WTI Crude", "BZ=F": "Brent Crude", "NG=F": "Nat Gas",
          "^TNX": "10Y Yield", "DX-Y.NYB": "USD Index"}
@@ -31,7 +35,7 @@ st.line_chart(vol)
 st.subheader("Correlation Matrix")
 st.caption("Shows how closely each pair of assets moves together. Values near +1 = move "
            "in sync, near -1 = move opposite, near 0 = no relationship. Key insight: "
-           "Nat Gas (0.05) is nearly uncorrelated with crude — it trades on its own fundamentals.")
+           "Nat Gas is nearly uncorrelated with crude — it trades on its own fundamentals.")
 corr = compute_correlation(prices)
 fig, ax = plt.subplots(figsize=(7, 5))
 sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", ax=ax)
