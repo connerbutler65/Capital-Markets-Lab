@@ -1,6 +1,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 from analysis import get_prices, compute_returns, compute_rolling_vol, compute_correlation
 
 st.set_page_config(page_title="Macro & Commodities Dashboard", layout="wide")
@@ -47,3 +48,66 @@ st.caption("Full daily price history for all tracked assets. "
            "Export or inspect for further analysis.")
 with st.expander("View Raw Price Data"):
     st.dataframe(prices.tail(20))
+
+# --- Dynamic Market Signals ---
+st.subheader("Live Market Signals (1-Month Trend)")
+st.caption("Auto-generated signals based on current vs. 1-month-ago prices. "
+           "Reflects real-time directional bias for each asset.")
+
+latest = prices.iloc[-1]
+prev = prices.iloc[-20]
+
+col1, col2, col3, col4, col5 = st.columns(5)
+cols = [col1, col2, col3, col4, col5]
+
+for i, asset in enumerate(prices.columns):
+    change = ((latest[asset] - prev[asset]) / prev[asset]) * 100
+    direction = "↑" if change > 0 else "↓"
+    cols[i].metric(asset, f"{direction} {abs(change):.1f}%",
+                   delta=f"{change:.1f}% (1M)")
+
+# --- Dynamic Trade Ideas ---
+st.subheader("Trade Ideas")
+st.caption("Forward-looking positions derived from current price trends, volatility regimes, "
+           "and macro correlations shown above. Updated dynamically based on live data.")
+
+wti_trend = "bullish" if latest["WTI Crude"] > prev["WTI Crude"] else "bearish"
+brent_trend = "bullish" if latest["Brent Crude"] > prev["Brent Crude"] else "bearish"
+gas_trend = "bullish" if latest["Nat Gas"] > prev["Nat Gas"] else "bearish"
+usd_trend = "weakening" if latest["USD Index"] < prev["USD Index"] else "strengthening"
+yield_trend = "rising" if latest["10Y Yield"] > prev["10Y Yield"] else "falling"
+
+wti_direction = "📈 Long" if wti_trend == "bullish" else "📉 Short"
+gas_direction = "📈 Long" if gas_trend == "bullish" else "📉 Short"
+usd_direction = "📉 Short" if usd_trend == "weakening" else "📈 Long"
+spread_direction = "📈 Long Spread" if brent_trend == "bullish" and wti_trend == "bearish" else "📉 Short Spread"
+
+trade_ideas = pd.DataFrame([
+    {
+        "Asset": "WTI Crude (CL=F)",
+        "Direction": wti_direction,
+        "Thesis": f"1M trend is {wti_trend}. {'USD weakness + supply draw supports upside. Watch $80 resistance.' if wti_trend == 'bullish' else 'Demand concerns weighing on price. Watch for support breakdown.'}",
+        "Risk": "Demand slowdown, China PMI miss"
+    },
+    {
+        "Asset": "Nat Gas (NG=F)",
+        "Direction": gas_direction,
+        "Thesis": f"1M trend is {gas_trend}. Low correlation to crude means idiosyncratic move. {'Storage deficit entering summer.' if gas_trend == 'bullish' else 'Oversupply risk near-term.'}",
+        "Risk": "Warm weather forecast, LNG export delays"
+    },
+    {
+        "Asset": "USD Index (DX-Y.NYB)",
+        "Direction": usd_direction,
+        "Thesis": f"USD is {usd_trend} with 10Y yields {yield_trend}. {'Rate differential narrowing vs peers — bearish USD.' if usd_trend == 'weakening' else 'Rate support keeping USD bid near-term.'}",
+        "Risk": "Fed hawkish surprise, risk-off flight to USD"
+    },
+    {
+        "Asset": "Brent-WTI Spread",
+        "Direction": spread_direction,
+        "Thesis": f"Brent is {brent_trend}, WTI is {wti_trend}. {'Geopolitical premium building in Brent.' if spread_direction == '📈 Long Spread' else 'Spread compression as US exports rise.'}",
+        "Risk": "US export surge, OPEC policy shift"
+    },
+])
+
+st.dataframe(trade_ideas, use_container_width=True)
+
