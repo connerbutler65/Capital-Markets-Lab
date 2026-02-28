@@ -47,3 +47,15 @@ A quantitative research tool analyzing the Brent-WTI crude oil spread using stat
 pip install -r requirements.txt
 cd Macro_Dashboard
 streamlit run dashboard.py
+
+---
+
+# Capital Markets Lab
+
+A live macro and commodities analytics platform built with Python and Streamlit.
+
+🔗 [Live Dashboard](https://capital-markets-labs.streamlit.app/)
+
+## Pages
+- **Macro Dashboard** — Price history, rolling volatility, correlation matrix, live market signals, and dynamic trade ideas across WTI, Brent, Nat Gas, USD Index, and 10Y Yield
+- **Crude Spread Model** — Brent-WTI spread analysis, Z-score mean reversion signals, and live trade signals
